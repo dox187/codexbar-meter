@@ -22,7 +22,7 @@ This is a fork of [`salemsayed/codexbar-meter`](https://github.com/noctalia-dev/
 - The bar text shows the time until the main window resets (`33% · 3d 5h`)
   instead of the window length (`7d 33%`), which upstream shows and which is
   easy to misread as the time left (`barLabel`). The tooltip lists the reset
-  time of every window.
+  time of every window that reports one.
 
 The plugin ID is `dox187/codexbar-meter`, so it can be installed next to the
 upstream plugin; enable only one of them in the bar.
