@@ -1,5 +1,5 @@
 {
-  "plugin_name": "CodexBar Meter",
+  "plugin_name": "CodexBar Meter (weekly)",
   "settings": {
     "bar_provider_limit": {
       "description": "Maximum number of provider meters shown in the bar capsule; the panel and tooltip still include all providers.",

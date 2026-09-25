@@ -1,8 +1,8 @@
-id           = "salemsayed/codexbar-meter"
-name         = "CodexBar Meter"
+id           = "dox187/codexbar-meter"
+name         = "CodexBar Meter (weekly)"
 version      = "1.0.0"
 plugin_api   = 8
-author       = "salemsayed"
+author       = "dox187 (fork of salemsayed/codexbar-meter)"
 license      = "MIT"
 icon         = "chart-donut-3"
 description  = "A native CodexBar-powered usage meter for enabled AI providers."

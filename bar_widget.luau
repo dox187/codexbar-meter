@@ -5,6 +5,10 @@
 -- widget only normalizes the shared JSON envelope and keeps the bar bounded:
 -- the first configured providers are shown in the capsule, while the tooltip
 -- and attached panel expose the complete response.
+--
+-- Fork of salemsayed/codexbar-meter: the weekly window is the headline
+-- meter (and the pace/expected source); a separate session window is drawn as
+-- a thin bar under it.
 
 local codexbarPath = noctalia.getConfig("codexbarPath") or "codexbar"
 local refreshIntervalSec = tonumber(noctalia.getConfig("refreshIntervalSec")) or 60
@@ -19,9 +23,9 @@ local requestInFlight = false
 -- nearby fixed tier when opening so the surface follows the current data
 -- without relying on an unsupported runtime resize API.
 local PANEL_IDS = {
-    compact = "salemsayed/codexbar-meter:panel-compact",
-    standard = "salemsayed/codexbar-meter:panel",
-    tall = "salemsayed/codexbar-meter:panel-tall",
+    compact = "dox187/codexbar-meter:panel-compact",
+    standard = "dox187/codexbar-meter:panel",
+    tall = "dox187/codexbar-meter:panel-tall",
 }
 
 local PROVIDER_META = {
@@ -44,6 +48,14 @@ local PROVIDER_META = {
 }
 
 local FALLBACK_COLORS = { "secondary", "tertiary", "primary" }
+
+local STANDARD_KEYS = { "primary", "secondary", "tertiary" }
+local WEEK_MINUTES = 10080
+
+-- Thick weekly bar with a thin session bar under it at one third of its height.
+local HEADLINE_BAR_HEIGHT = 6
+local SESSION_BAR_HEIGHT = 2
+local BAR_WIDTH = 26
 
 local function shellQuote(value)
     return "'" .. string.gsub(tostring(value), "'", "'\\''") .. "'"
@@ -139,6 +151,32 @@ local function remainingPercent(window)
     return math.max(0, math.min(100, 100 - used))
 end
 
+local function hasUsage(window)
+    return type(window) == "table" and tonumber(window.usedPercent) ~= nil
+end
+
+-- The weekly window is the budget that actually runs out; the short session
+-- window only throttles bursts. Returns the standard key ("primary",
+-- "secondary", ...) of the weekly window, or nil when the provider has none.
+local function headlineKey(usage)
+    if type(usage) ~= "table" then return nil end
+    for _, key in ipairs(STANDARD_KEYS) do
+        local window = usage[key]
+        if hasUsage(window) and tonumber(window.windowMinutes) == WEEK_MINUTES then
+            return key
+        end
+    end
+    return nil
+end
+
+-- The session window is the primary one whenever the weekly window is not.
+local function sessionWindow(usage)
+    local headline = headlineKey(usage)
+    if headline == nil or headline == "primary" then return nil end
+    if hasUsage(usage.primary) then return usage.primary end
+    return nil
+end
+
 local function addWindow(windows, title, window, rank)
     if type(window) ~= "table" or tonumber(window.usedPercent) == nil then return end
     for _, item in ipairs(windows) do
@@ -156,9 +194,15 @@ local function windowsFor(provider)
     local usage = type(provider) == "table" and provider.usage or nil
     if type(usage) ~= "table" then return result end
 
-    addWindow(result, windowLabel(usage.primary, "Session"), usage.primary, 1)
-    addWindow(result, windowLabel(usage.secondary, "Weekly"), usage.secondary, 2)
-    addWindow(result, windowLabel(usage.tertiary, "Monthly"), usage.tertiary, 3)
+    local headline = headlineKey(usage)
+    local function rankOf(key, default)
+        if key == headline then return 0 end
+        return default
+    end
+
+    addWindow(result, windowLabel(usage.primary, "Session"), usage.primary, rankOf("primary", 1))
+    addWindow(result, windowLabel(usage.secondary, "Weekly"), usage.secondary, rankOf("secondary", 2))
+    addWindow(result, windowLabel(usage.tertiary, "Monthly"), usage.tertiary, rankOf("tertiary", 3))
 
     if type(usage.extraRateWindows) == "table" then
         for index, extra in ipairs(usage.extraRateWindows) do
@@ -201,14 +245,32 @@ local function creditsFor(provider)
     return nil
 end
 
+-- CodexBar reports pace (expected usage at this point of the window) per
+-- standard window key; follow the headline window, not the session.
+local function paceFor(provider)
+    local pace = type(provider) == "table" and provider.pace or nil
+    if type(pace) ~= "table" then return nil end
+    local headline = headlineKey(provider.usage)
+    if headline ~= nil and type(pace[headline]) == "table" and pace[headline].summary ~= nil then
+        return pace[headline]
+    end
+    for _, key in ipairs(STANDARD_KEYS) do
+        if type(pace[key]) == "table" and pace[key].summary ~= nil then return pace[key] end
+    end
+    return nil
+end
+
 local function summaryFor(provider)
     local windows = windowsFor(provider)
     if #windows > 0 then
         local window = windows[1].window
+        local session = sessionWindow(provider.usage)
         return {
             window = window,
             label = windows[1].title .. " " .. string.format("%d%%", math.floor((remainingPercent(window) or 0) + 0.5)),
             remaining = remainingPercent(window),
+            session = session,
+            sessionRemaining = session ~= nil and remainingPercent(session) or nil,
         }
     end
 
@@ -260,14 +322,29 @@ local function providerSegment(entry)
     }
 
     if summary.window ~= nil then
-        children[#children + 1] = ui.progress({
+        local headlineBar = ui.progress({
             progress = (summary.remaining or 0) / 100,
             fill = meta.color,
             track = "on_surface/0.16",
             radius = 6,
-            width = 26,
-            height = 5,
+            width = BAR_WIDTH,
+            height = HEADLINE_BAR_HEIGHT,
         })
+        if summary.session ~= nil then
+            children[#children + 1] = ui.column({ gap = 2 }, {
+                headlineBar,
+                ui.progress({
+                    progress = (summary.sessionRemaining or 0) / 100,
+                    fill = meta.color,
+                    track = "on_surface/0.16",
+                    radius = 1,
+                    width = BAR_WIDTH,
+                    height = SESSION_BAR_HEIGHT,
+                }),
+            })
+        else
+            children[#children + 1] = headlineBar
+        end
     end
 
     children[#children + 1] = ui.label({
@@ -292,6 +369,11 @@ local function tooltipFor(provider, index)
     local lines = {}
     for _, item in ipairs(windows) do
         lines[#lines + 1] = item.title .. ": " .. percentText(remainingPercent(item.window)) .. " left"
+    end
+
+    local pace = paceFor(provider)
+    if pace ~= nil then
+        lines[#lines + 1] = "Pace: " .. tostring(pace.summary)
     end
 
     local credits = creditsFor(provider)

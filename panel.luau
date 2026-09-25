@@ -4,6 +4,9 @@
 -- The panel intentionally renders the provider array instead of naming a
 -- fixed pair. CodexBar can add providers and provider-specific quota windows;
 -- the standard usedPercent/reset envelope is enough for a useful generic card.
+--
+-- Fork of salemsayed/codexbar-meter: the weekly window is listed first
+-- and is the source of the pace (expected usage) row.
 
 local providers = {}
 local errorMsg = ""
@@ -17,6 +20,9 @@ local PROVIDER_META = {
 }
 
 local FALLBACK_COLORS = { "secondary", "tertiary", "primary" }
+
+local STANDARD_KEYS = { "primary", "secondary", "tertiary" }
+local WEEK_MINUTES = 10080
 
 local function providerId(provider)
     return tostring(provider and (provider.provider or provider.id) or "unknown")
@@ -153,6 +159,22 @@ local function updatedAge(provider)
     return string.format("%dh ago", math.floor(seconds / 3600))
 end
 
+local function hasUsage(window)
+    return type(window) == "table" and tonumber(window.usedPercent) ~= nil
+end
+
+-- Standard key of the weekly window, which leads the card; nil when absent.
+local function headlineKey(usage)
+    if type(usage) ~= "table" then return nil end
+    for _, key in ipairs(STANDARD_KEYS) do
+        local window = usage[key]
+        if hasUsage(window) and tonumber(window.windowMinutes) == WEEK_MINUTES then
+            return key
+        end
+    end
+    return nil
+end
+
 local function addWindow(windows, title, window, rank, color)
     if type(window) ~= "table" or tonumber(window.usedPercent) == nil then return end
     for _, item in ipairs(windows) do
@@ -172,9 +194,15 @@ local function windowsFor(provider)
     if type(usage) ~= "table" then return result end
     local color = metaFor(provider, 1).color
 
-    addWindow(result, windowLabel(usage.primary, "Session"), usage.primary, 1, color)
-    addWindow(result, windowLabel(usage.secondary, "Weekly"), usage.secondary, 2, color)
-    addWindow(result, windowLabel(usage.tertiary, "Monthly"), usage.tertiary, 3, color)
+    local headline = headlineKey(usage)
+    local function rankOf(key, default)
+        if key == headline then return 0 end
+        return default
+    end
+
+    addWindow(result, windowLabel(usage.primary, "Session"), usage.primary, rankOf("primary", 1), color)
+    addWindow(result, windowLabel(usage.secondary, "Weekly"), usage.secondary, rankOf("secondary", 2), color)
+    addWindow(result, windowLabel(usage.tertiary, "Monthly"), usage.tertiary, rankOf("tertiary", 3), color)
 
     if type(usage.extraRateWindows) == "table" then
         for index, extra in ipairs(usage.extraRateWindows) do
@@ -214,10 +242,16 @@ local function creditsFor(provider)
     return nil
 end
 
+-- The weekly window wins over the session window, so "Expected" tracks the
+-- weekly budget (the first window row of the card).
 local function paceFor(provider)
     local pace = type(provider) == "table" and provider.pace or nil
     if type(pace) ~= "table" then return nil end
-    for _, key in ipairs({ "primary", "secondary", "tertiary" }) do
+    local headline = headlineKey(provider.usage)
+    if headline ~= nil and type(pace[headline]) == "table" and pace[headline].summary ~= nil then
+        return pace[headline]
+    end
+    for _, key in ipairs(STANDARD_KEYS) do
         if type(pace[key]) == "table" and pace[key].summary ~= nil then return pace[key] end
     end
     for _, value in pairs(pace) do

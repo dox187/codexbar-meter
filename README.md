@@ -5,11 +5,38 @@ limits reported by the local [CodexBar](https://github.com/steipete/CodexBar)
 CLI. It discovers the providers enabled in CodexBar, keeps the bar compact,
 and exposes every provider and quota window in a scrollable panel.
 
+## Fork
+
+This is a fork of [`salemsayed/codexbar-meter`](https://github.com/noctalia-dev/community-plugins/tree/main/codexbar-meter)
+(MIT), based on upstream commit `cea27fb`. Differences from upstream:
+
+- The weekly window (`windowMinutes = 10080`) is the headline meter in the bar,
+  the first row in the panel, and the source of the pace / "Expected" line.
+  Upstream uses the first reported window, which for Claude and Ollama is the
+  5-hour session.
+- When a provider also reports a separate session window (`primary`), the bar
+  draws it as a thin bar (1/3 of the weekly bar's height) under the weekly one.
+- Providers without a weekly window behave exactly as upstream.
+
+The plugin ID is `dox187/codexbar-meter`, so it can be installed next to the
+upstream plugin; enable only one of them in the bar.
+
+## Installation
+
+```sh
+git clone https://github.com/dox187/codexbar-meter.git \
+    ~/.local/share/noctalia/plugins/codexbar-meter
+noctalia msg plugins enable dox187/codexbar-meter
+```
+
+Then add the `dox187/codexbar-meter:bar` widget to a bar. Update with
+`git -C ~/.local/share/noctalia/plugins/codexbar-meter pull`.
+
 ## Plugin
 
 | Field | Value |
 | --- | --- |
-| ID | `salemsayed/codexbar-meter` |
+| ID | `dox187/codexbar-meter` |
 | Entries | Bar widget: `bar`; panel entries: `panel-compact`, `panel`, `panel-tall` |
 
 ## Requirements
@@ -24,7 +51,7 @@ The plugin does not read or store provider credentials.
 
 ## Usage
 
-Add `salemsayed/codexbar-meter:bar` to a Noctalia bar. The bar shows up to two
+Add `dox187/codexbar-meter:bar` to a Noctalia bar. The bar shows up to two
 provider meters by default, followed by a `+N` count when more providers are
 enabled in CodexBar. The tooltip includes all returned providers.
 
@@ -38,14 +65,14 @@ enabled in CodexBar. The tooltip includes all returned providers.
 To open the standard panel from a terminal:
 
 ```sh
-noctalia msg panel-toggle salemsayed/codexbar-meter:panel
+noctalia msg panel-toggle dox187/codexbar-meter:panel
 ```
 
 The adaptive widget also uses these panel entries when opening from the bar:
 
-- `noctalia msg panel-toggle salemsayed/codexbar-meter:panel-compact` — 390 px
-- `noctalia msg panel-toggle salemsayed/codexbar-meter:panel` — 560 px
-- `noctalia msg panel-toggle salemsayed/codexbar-meter:panel-tall` — 720 px
+- `noctalia msg panel-toggle dox187/codexbar-meter:panel-compact` — 390 px
+- `noctalia msg panel-toggle dox187/codexbar-meter:panel` — 560 px
+- `noctalia msg panel-toggle dox187/codexbar-meter:panel-tall` — 720 px
 
 The panel renders all provider cards and scrolls when the response is taller
 than the panel. It understands CodexBar's standard primary, secondary, and
@@ -70,7 +97,7 @@ provider without changing the Noctalia code.
 Refresh the widget and panel through the shared plugin state:
 
 ```sh
-noctalia msg plugin salemsayed/codexbar-meter:bar all refresh
+noctalia msg plugin dox187/codexbar-meter:bar all refresh
 ```
 
 ## Notes
