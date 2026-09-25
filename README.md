@@ -89,6 +89,12 @@ providers receive a readable title, a neutral icon, and a theme-derived color.
 | `codexbarPath` | `string` | `codexbar` | Command or absolute path used to query CodexBar. |
 | `refreshIntervalSec` | `int` | `60` | Background refresh interval in seconds; allowed range is 30–3600. |
 | `barProviderLimit` | `int` | `2` | Number of provider meters shown in the bar; allowed range is 1–4. The panel and tooltip always include all providers. |
+
+Widget settings, per bar widget instance (middle-click the widget, or
+Settings → Bar → the widget):
+
+| Setting | Type | Default | Description |
+| --- | --- | --- | --- |
 | `mainWindow` | `select` | `weekly` | `weekly`: the 7-day window leads the bar, the panel, and the pace line when the provider reports one. `codexbar`: the first window CodexBar reports (upstream behaviour). |
 | `barExtraBars` | `select` | `one` | Thin bars under the main bar: `none`, `one` (the next window, e.g. the session under the weekly bar), or `all` (every other window, up to 3). |
 

@@ -60,11 +60,21 @@ local EXTRA_BAR_HEIGHT = 2
 local MAX_EXTRA_BARS = 3
 local BAR_WIDTH = 26
 
--- Read on every use: bar widgets get no onConfigChanged callback, so a
--- settings change applies on the next render or refresh.
+-- Widget settings, read on every use: bar widgets get no onConfigChanged
+-- callback, so a settings change applies on the next render or refresh.
 local function mainWindowMode()
     if noctalia.getConfig("mainWindow") == "codexbar" then return "codexbar" end
     return "weekly"
+end
+
+-- The panel cannot read widget settings, so it follows the mode published here.
+local publishedMainWindow = nil
+local function publishMainWindow()
+    local mode = mainWindowMode()
+    if mode ~= publishedMainWindow then
+        publishedMainWindow = mode
+        noctalia.state.set("mainWindow", mode)
+    end
 end
 
 local function extraBarLimit()
@@ -457,6 +467,7 @@ local function panelEntryIdForCurrentData()
 end
 
 local function render()
+    publishMainWindow()
     local selected = selectedEntries()
     local rows = {}
 

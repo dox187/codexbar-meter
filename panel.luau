@@ -165,10 +165,10 @@ local function hasUsage(window)
 end
 
 -- Standard key of the weekly window, which leads the card; nil when absent
--- or when the upstream CodexBar order is selected. Read per render so a
--- settings change applies the next time the panel draws.
+-- or when the upstream CodexBar order is selected. The mode is a bar widget
+-- setting that the widget publishes as shared state.
 local function headlineKey(usage)
-    if type(usage) ~= "table" or noctalia.getConfig("mainWindow") == "codexbar" then return nil end
+    if type(usage) ~= "table" or noctalia.state.get("mainWindow") == "codexbar" then return nil end
     for _, key in ipairs(STANDARD_KEYS) do
         local window = usage[key]
         if hasUsage(window) and tonumber(window.windowMinutes) == WEEK_MINUTES then
@@ -461,6 +461,10 @@ noctalia.state.watch("error", function(value)
         errorMsg = value
         render()
     end
+end)
+
+noctalia.state.watch("mainWindow", function(_value)
+    render()
 end)
 
 function onOpen(_context)

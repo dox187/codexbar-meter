@@ -34,7 +34,13 @@ default         = 2
 min             = 1
 max             = 4
 
-[[setting]]
+[[widget]]
+id    = "bar"
+entry = "bar_widget.luau"
+
+# Per-instance settings, shown by middle-clicking the widget. The bar widget
+# publishes mainWindow to the panel through shared plugin state.
+[[widget.setting]]
 key             = "mainWindow"
 type            = "select"
 label_key       = "settings.main_window.label"
@@ -45,7 +51,7 @@ options = [
     { value = "codexbar", label_key = "settings.main_window.options.codexbar" },
 ]
 
-[[setting]]
+[[widget.setting]]
 key             = "barExtraBars"
 type            = "select"
 label_key       = "settings.bar_extra_bars.label"
@@ -56,10 +62,6 @@ options = [
     { value = "one", label_key = "settings.bar_extra_bars.options.one" },
     { value = "all", label_key = "settings.bar_extra_bars.options.all" },
 ]
-
-[[widget]]
-id    = "bar"
-entry = "bar_widget.luau"
 
 [[panel]]
 id                  = "panel-compact"
