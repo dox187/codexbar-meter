@@ -7,10 +7,10 @@
 -- and attached panel expose the complete response.
 --
 -- Fork of salemsayed/codexbar-meter: by default the weekly window is the
--- headline meter (and the pace/expected source) and the next window, usually
--- the session, is drawn as a thin bar under it. Both are settings
--- (`mainWindow`, `barExtraBars`); `mainWindow = "codexbar"` restores the
--- upstream window order.
+-- headline meter (and the pace/expected source), the next window, usually
+-- the session, is drawn as a thin bar under it, and the text shows the time
+-- until reset. All three are widget settings (`mainWindow`, `barExtraBars`,
+-- `barLabel`); `codexbar` / `none` / `window` restore the upstream look.
 
 local codexbarPath = noctalia.getConfig("codexbarPath") or "codexbar"
 local refreshIntervalSec = tonumber(noctalia.getConfig("refreshIntervalSec")) or 60
@@ -281,6 +281,9 @@ local function paceFor(provider)
     end
     for _, key in ipairs(STANDARD_KEYS) do
         if type(pace[key]) == "table" and pace[key].summary ~= nil then return pace[key] end
+    end
+    for _, value in pairs(pace) do
+        if type(value) == "table" and value.summary ~= nil then return value end
     end
     return nil
 end
