@@ -5,8 +5,9 @@
 -- fixed pair. CodexBar can add providers and provider-specific quota windows;
 -- the standard usedPercent/reset envelope is enough for a useful generic card.
 --
--- Fork of salemsayed/codexbar-meter: the weekly window is listed first
--- and is the source of the pace (expected usage) row.
+-- Fork of salemsayed/codexbar-meter: with `mainWindow = "weekly"` (default)
+-- the weekly window is listed first and is the source of the pace (expected
+-- usage) row; `mainWindow = "codexbar"` keeps the upstream order.
 
 local providers = {}
 local errorMsg = ""
@@ -163,9 +164,11 @@ local function hasUsage(window)
     return type(window) == "table" and tonumber(window.usedPercent) ~= nil
 end
 
--- Standard key of the weekly window, which leads the card; nil when absent.
+-- Standard key of the weekly window, which leads the card; nil when absent
+-- or when the upstream CodexBar order is selected. Read per render so a
+-- settings change applies the next time the panel draws.
 local function headlineKey(usage)
-    if type(usage) ~= "table" then return nil end
+    if type(usage) ~= "table" or noctalia.getConfig("mainWindow") == "codexbar" then return nil end
     for _, key in ipairs(STANDARD_KEYS) do
         local window = usage[key]
         if hasUsage(window) and tonumber(window.windowMinutes) == WEEK_MINUTES then

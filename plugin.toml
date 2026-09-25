@@ -34,6 +34,29 @@ default         = 2
 min             = 1
 max             = 4
 
+[[setting]]
+key             = "mainWindow"
+type            = "select"
+label_key       = "settings.main_window.label"
+description_key = "settings.main_window.description"
+default         = "weekly"
+options = [
+    { value = "weekly", label_key = "settings.main_window.options.weekly" },
+    { value = "codexbar", label_key = "settings.main_window.options.codexbar" },
+]
+
+[[setting]]
+key             = "barExtraBars"
+type            = "select"
+label_key       = "settings.bar_extra_bars.label"
+description_key = "settings.bar_extra_bars.description"
+default         = "one"
+options = [
+    { value = "none", label_key = "settings.bar_extra_bars.options.none" },
+    { value = "one", label_key = "settings.bar_extra_bars.options.one" },
+    { value = "all", label_key = "settings.bar_extra_bars.options.all" },
+]
+
 [[widget]]
 id    = "bar"
 entry = "bar_widget.luau"

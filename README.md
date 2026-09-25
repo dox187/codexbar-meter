@@ -10,13 +10,15 @@ and exposes every provider and quota window in a scrollable panel.
 This is a fork of [`salemsayed/codexbar-meter`](https://github.com/noctalia-dev/community-plugins/tree/main/codexbar-meter)
 (MIT), based on upstream commit `cea27fb`. Differences from upstream:
 
-- The weekly window (`windowMinutes = 10080`) is the headline meter in the bar,
-  the first row in the panel, and the source of the pace / "Expected" line.
-  Upstream uses the first reported window, which for Claude and Ollama is the
-  5-hour session.
-- When a provider also reports a separate session window (`primary`), the bar
-  draws it as a thin bar (1/3 of the weekly bar's height) under the weekly one.
-- Providers without a weekly window behave exactly as upstream.
+- By default the weekly window (`windowMinutes = 10080`) is the headline meter
+  in the bar, the first row in the panel, and the source of the pace /
+  "Expected" line. Upstream uses the first reported window, which for Claude
+  and Ollama is the 5-hour session. `mainWindow = "codexbar"` restores the
+  upstream order.
+- The bar can draw further windows as thin bars (1/3 of the main bar's height)
+  under the main one: by default the next window, which is the session under
+  the weekly bar (`barExtraBars`).
+- Providers without a weekly window keep the upstream order.
 
 The plugin ID is `dox187/codexbar-meter`, so it can be installed next to the
 upstream plugin; enable only one of them in the bar.
@@ -87,6 +89,8 @@ providers receive a readable title, a neutral icon, and a theme-derived color.
 | `codexbarPath` | `string` | `codexbar` | Command or absolute path used to query CodexBar. |
 | `refreshIntervalSec` | `int` | `60` | Background refresh interval in seconds; allowed range is 30–3600. |
 | `barProviderLimit` | `int` | `2` | Number of provider meters shown in the bar; allowed range is 1–4. The panel and tooltip always include all providers. |
+| `mainWindow` | `select` | `weekly` | `weekly`: the 7-day window leads the bar, the panel, and the pace line when the provider reports one. `codexbar`: the first window CodexBar reports (upstream behaviour). |
+| `barExtraBars` | `select` | `one` | Thin bars under the main bar: `none`, `one` (the next window, e.g. the session under the weekly bar), or `all` (every other window, up to 3). |
 
 When no provider flag is supplied, CodexBar's configured enabled-provider list
 is used. This lets the plugin work with any current or future CodexBar

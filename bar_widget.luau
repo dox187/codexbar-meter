@@ -6,9 +6,11 @@
 -- the first configured providers are shown in the capsule, while the tooltip
 -- and attached panel expose the complete response.
 --
--- Fork of salemsayed/codexbar-meter: the weekly window is the headline
--- meter (and the pace/expected source); a separate session window is drawn as
--- a thin bar under it.
+-- Fork of salemsayed/codexbar-meter: by default the weekly window is the
+-- headline meter (and the pace/expected source) and the next window, usually
+-- the session, is drawn as a thin bar under it. Both are settings
+-- (`mainWindow`, `barExtraBars`); `mainWindow = "codexbar"` restores the
+-- upstream window order.
 
 local codexbarPath = noctalia.getConfig("codexbarPath") or "codexbar"
 local refreshIntervalSec = tonumber(noctalia.getConfig("refreshIntervalSec")) or 60
@@ -52,10 +54,25 @@ local FALLBACK_COLORS = { "secondary", "tertiary", "primary" }
 local STANDARD_KEYS = { "primary", "secondary", "tertiary" }
 local WEEK_MINUTES = 10080
 
--- Thick weekly bar with a thin session bar under it at one third of its height.
+-- Thick main bar with thin bars under it at one third of its height.
 local HEADLINE_BAR_HEIGHT = 6
-local SESSION_BAR_HEIGHT = 2
+local EXTRA_BAR_HEIGHT = 2
+local MAX_EXTRA_BARS = 3
 local BAR_WIDTH = 26
+
+-- Read on every use: bar widgets get no onConfigChanged callback, so a
+-- settings change applies on the next render or refresh.
+local function mainWindowMode()
+    if noctalia.getConfig("mainWindow") == "codexbar" then return "codexbar" end
+    return "weekly"
+end
+
+local function extraBarLimit()
+    local mode = noctalia.getConfig("barExtraBars")
+    if mode == "none" then return 0 end
+    if mode == "all" then return MAX_EXTRA_BARS end
+    return 1
+end
 
 local function shellQuote(value)
     return "'" .. string.gsub(tostring(value), "'", "'\\''") .. "'"
@@ -157,23 +174,16 @@ end
 
 -- The weekly window is the budget that actually runs out; the short session
 -- window only throttles bursts. Returns the standard key ("primary",
--- "secondary", ...) of the weekly window, or nil when the provider has none.
+-- "secondary", ...) of the weekly window, or nil when the provider has none
+-- or the upstream CodexBar order is selected.
 local function headlineKey(usage)
-    if type(usage) ~= "table" then return nil end
+    if type(usage) ~= "table" or mainWindowMode() == "codexbar" then return nil end
     for _, key in ipairs(STANDARD_KEYS) do
         local window = usage[key]
         if hasUsage(window) and tonumber(window.windowMinutes) == WEEK_MINUTES then
             return key
         end
     end
-    return nil
-end
-
--- The session window is the primary one whenever the weekly window is not.
-local function sessionWindow(usage)
-    local headline = headlineKey(usage)
-    if headline == nil or headline == "primary" then return nil end
-    if hasUsage(usage.primary) then return usage.primary end
     return nil
 end
 
@@ -264,13 +274,15 @@ local function summaryFor(provider)
     local windows = windowsFor(provider)
     if #windows > 0 then
         local window = windows[1].window
-        local session = sessionWindow(provider.usage)
+        local extras = {}
+        for index = 2, math.min(#windows, extraBarLimit() + 1) do
+            extras[#extras + 1] = remainingPercent(windows[index].window) or 0
+        end
         return {
             window = window,
             label = windows[1].title .. " " .. string.format("%d%%", math.floor((remainingPercent(window) or 0) + 0.5)),
             remaining = remainingPercent(window),
-            session = session,
-            sessionRemaining = session ~= nil and remainingPercent(session) or nil,
+            extras = extras,
         }
     end
 
@@ -330,18 +342,20 @@ local function providerSegment(entry)
             width = BAR_WIDTH,
             height = HEADLINE_BAR_HEIGHT,
         })
-        if summary.session ~= nil then
-            children[#children + 1] = ui.column({ gap = 2 }, {
-                headlineBar,
-                ui.progress({
-                    progress = (summary.sessionRemaining or 0) / 100,
+        local extras = summary.extras or {}
+        if #extras > 0 then
+            local bars = { headlineBar }
+            for _, remaining in ipairs(extras) do
+                bars[#bars + 1] = ui.progress({
+                    progress = remaining / 100,
                     fill = meta.color,
                     track = "on_surface/0.16",
                     radius = 1,
                     width = BAR_WIDTH,
-                    height = SESSION_BAR_HEIGHT,
-                }),
-            })
+                    height = EXTRA_BAR_HEIGHT,
+                })
+            end
+            children[#children + 1] = ui.column({ gap = 2 }, bars)
         else
             children[#children + 1] = headlineBar
         end

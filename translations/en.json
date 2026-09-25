@@ -12,6 +12,23 @@
     "refresh_interval": {
       "description": "Seconds between background usage refreshes.",
       "label": "Refresh interval"
+    },
+    "main_window": {
+      "label": "Main usage window",
+      "description": "Window shown by the thick bar and percentage, listed first in the panel, and used for the pace line. Weekly uses the 7-day window when the provider reports one; CodexBar order uses the first window CodexBar reports (usually the 5-hour session), like the upstream plugin.",
+      "options": {
+        "weekly": "Weekly window",
+        "codexbar": "CodexBar order (upstream)"
+      }
+    },
+    "bar_extra_bars": {
+      "label": "Thin bars under the main bar",
+      "description": "Other usage windows drawn as thin bars (1/3 of the main bar's height) under the main bar. Next window shows the one listed after the main window, e.g. the session under the weekly bar.",
+      "options": {
+        "none": "None",
+        "one": "Next window",
+        "all": "All other windows (up to 3)"
+      }
     }
   }
 }
