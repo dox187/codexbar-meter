@@ -52,6 +52,17 @@ options = [
 ]
 
 [[widget.setting]]
+key             = "barLabel"
+type            = "select"
+label_key       = "settings.bar_label.label"
+description_key = "settings.bar_label.description"
+default         = "reset"
+options = [
+    { value = "reset", label_key = "settings.bar_label.options.reset" },
+    { value = "window", label_key = "settings.bar_label.options.window" },
+]
+
+[[widget.setting]]
 key             = "barExtraBars"
 type            = "select"
 label_key       = "settings.bar_extra_bars.label"

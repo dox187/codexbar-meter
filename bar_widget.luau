@@ -77,6 +77,11 @@ local function publishMainWindow()
     end
 end
 
+local function barLabelMode()
+    if noctalia.getConfig("barLabel") == "window" then return "window" end
+    return "reset"
+end
+
 local function extraBarLimit()
     local mode = noctalia.getConfig("barExtraBars")
     if mode == "none" then return 0 end
@@ -335,6 +340,44 @@ local function percentText(value)
     return string.format("%d%%", math.floor(value + 0.5))
 end
 
+local function parseIso(value)
+    if type(value) ~= "string" then return nil end
+    local y, mo, d, h, mi, s = value:match("^(%d+)%-(%d+)%-(%d+)T(%d+):(%d+):(%d+)")
+    if y == nil then return nil end
+
+    local localGuess = os.time({
+        year = tonumber(y), month = tonumber(mo), day = tonumber(d),
+        hour = tonumber(h), min = tonumber(mi), sec = tonumber(s),
+    })
+    local utcAsLocal = os.time(os.date("!*t", localGuess))
+    return localGuess + (localGuess - utcAsLocal)
+end
+
+-- Compact time until the window resets ("3d 5h", "4h 20m", "12m"); nil when
+-- CodexBar reports no reset time. The window label ("7d") is the window's
+-- length, not its expiry, so the bar shows this instead by default.
+local function resetCountdown(window)
+    if type(window) ~= "table" then return nil end
+    local epoch = parseIso(window.resetsAt)
+    if epoch == nil then return nil end
+    local seconds = epoch - os.time()
+    if seconds <= 0 then return "now" end
+    local days = math.floor(seconds / 86400)
+    local hours = math.floor((seconds % 86400) / 3600)
+    local minutes = math.floor((seconds % 3600) / 60)
+    if days > 0 then return string.format("%dd %dh", days, hours) end
+    if hours > 0 then return string.format("%dh %dm", hours, minutes) end
+    return string.format("%dm", math.max(1, minutes))
+end
+
+local function meterText(window, remaining)
+    if barLabelMode() == "reset" then
+        local countdown = resetCountdown(window)
+        if countdown ~= nil then return percentText(remaining) .. " · " .. countdown end
+    end
+    return windowLabel(window) .. " " .. percentText(remaining)
+end
+
 local function providerSegment(entry)
     local provider = entry.provider
     local meta = metaFor(provider, entry.index)
@@ -372,7 +415,7 @@ local function providerSegment(entry)
     end
 
     children[#children + 1] = ui.label({
-        text = summary.window ~= nil and (windowLabel(summary.window) .. " " .. percentText(summary.remaining)) or summary.label,
+        text = summary.window ~= nil and meterText(summary.window, summary.remaining) or summary.label,
         fontSize = 11,
         fontWeight = "semibold",
         color = "on_surface",
@@ -392,7 +435,10 @@ local function tooltipFor(provider, index)
     local windows = windowsFor(provider)
     local lines = {}
     for _, item in ipairs(windows) do
-        lines[#lines + 1] = item.title .. ": " .. percentText(remainingPercent(item.window)) .. " left"
+        local line = item.title .. ": " .. percentText(remainingPercent(item.window)) .. " left"
+        local countdown = resetCountdown(item.window)
+        if countdown ~= nil then line = line .. " · resets in " .. countdown end
+        lines[#lines + 1] = line
     end
 
     local pace = paceFor(provider)

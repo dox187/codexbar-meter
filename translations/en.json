@@ -29,6 +29,14 @@
         "one": "Next window",
         "all": "All other windows (up to 3)"
       }
+    },
+    "bar_label": {
+      "label": "Bar text",
+      "description": "Text next to each meter. Time until reset shows the main window's remaining percentage and when it resets (33% · 3d 5h). Window length shows the window's size instead (7d 33%), like the upstream plugin; that is not the time left.",
+      "options": {
+        "reset": "Remaining · time until reset",
+        "window": "Window length · remaining (upstream)"
+      }
     }
   }
 }

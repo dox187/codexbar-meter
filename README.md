@@ -19,6 +19,10 @@ This is a fork of [`salemsayed/codexbar-meter`](https://github.com/noctalia-dev/
   under the main one: by default the next window, which is the session under
   the weekly bar (`barExtraBars`).
 - Providers without a weekly window keep the upstream order.
+- The bar text shows the time until the main window resets (`33% · 3d 5h`)
+  instead of the window length (`7d 33%`), which upstream shows and which is
+  easy to misread as the time left (`barLabel`). The tooltip lists the reset
+  time of every window.
 
 The plugin ID is `dox187/codexbar-meter`, so it can be installed next to the
 upstream plugin; enable only one of them in the bar.
@@ -96,6 +100,7 @@ Settings → Bar → the widget):
 | Setting | Type | Default | Description |
 | --- | --- | --- | --- |
 | `mainWindow` | `select` | `weekly` | `weekly`: the 7-day window leads the bar, the panel, and the pace line when the provider reports one. `codexbar`: the first window CodexBar reports (upstream behaviour). |
+| `barLabel` | `select` | `reset` | Text next to each meter: `reset` shows the remaining percentage and the time until the main window resets (`33% · 3d 5h`); `window` shows the window length (`7d 33%`, upstream behaviour), which is not the time left. |
 | `barExtraBars` | `select` | `one` | Thin bars under the main bar: `none`, `one` (the next window, e.g. the session under the weekly bar), or `all` (every other window, up to 3). |
 
 When no provider flag is supplied, CodexBar's configured enabled-provider list
